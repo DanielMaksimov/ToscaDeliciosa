@@ -36,8 +36,9 @@ def download_image(start_date: str,
         process_l1c_to_l2a(name)
 
         #Index extraction
+        temp_tile = name.split("_")[-2][1:]
         path_to_image = SEN2CHAIN_DATA_PATH + "data/L2A/" + name
-        process_index(path_to_image, ['NDVI','NDWI'])
+        #process_index(path_to_image, ['NDVI','NDWI'])
 
     return 0
 
@@ -97,4 +98,29 @@ def process_l1c_to_l2a(name):
 
 
 def process_index(path, list_indexes):
-    return 0
+    # Print out the name of the image, for tracking
+    print("Working on image " + img4.split("/")[-1])
+
+    # Rasters
+    ras4 = Raster(img4)
+    ras8 = Raster(img8)
+
+    # Try except block to manage cases where there is no cloud mask
+    try:
+        mask = geopandas.GeoDataFrame.from_file(mask_file)
+        ras4 = ras4.mask(mask)
+        ras8 = ras8.mask(mask)
+    except ValueError:
+        print("No mask for this image")
+
+    # Cropland parcel
+    gp_parcelle = geopandas.read_file(parcel)
+    # CRS
+    gp_parcelle = gp_parcelle.to_crs(crs=ras4.crs)
+
+    # Stats
+    # We use np.array() so that the + operator is element-wise addition
+    red = np.array(ras4.zonal_stats(gp_parcelle, band=1, stats=["mean"])["mean"])
+    pir = np.array(ras8.zonal_stats(gp_parcelle, band=1, stats=["mean"])["mean"])
+    del ras4, ras8
+    return (pir - red) / (pir + red)
