@@ -1,11 +1,11 @@
 import sen2chain
-from os import listdir
 import geopandas
 import csv
-from pyrasta.raster import Raster
 import time
+from os import listdir
+from pyrasta.raster import Raster
 from multiprocessing import Process
-
+from math import nan
 SEN2CHAIN_DATA_PATH = "/home/daniel/sen2chain_data/"
 
 """
@@ -45,7 +45,9 @@ def download_image(start_date: str,
         results = process_index(path_to_image, ['NDVI'])
 
         # Database update
-
+        with open("/home/maksimov/DATABASE_TEST.csv", 'a+', newline='') as f:
+            print("Writing in file " + "/home/maksimov/DATABASE_TEST.csv")
+            
         # Image deletion
 
     return 0
