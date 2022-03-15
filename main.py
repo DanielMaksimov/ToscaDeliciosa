@@ -9,4 +9,3 @@ abc = download_image("2022-01-07", "2022-01-10", ["31TEJ"])
 
 # sen2chain.DownloadAndProcess(identifiers=requests, hubs_limit={"scihub": 0, "peps": 8})
 
-download_image("2022-01-01","2022-01-10", ["31TEJ"])

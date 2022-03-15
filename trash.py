@@ -37,15 +37,50 @@ def download_image(start_date: str,
 
         # Index extraction
         temp_tile = name.split("_")[-2][1:]
-        path_to_image = SEN2CHAIN_DATA_PATH + "data/L2A/" + temp_tile + "/" + name + "/"
+        path_to_image = SEN2CHAIN_DATA_PATH + "data/L2A/" + temp_tile + "/" + name
         print("Working on image:", path_to_image)
-        results = process_index(path_to_image, ['NDVI'])
-
-        # Database update
-
-        # Image deletion
+        process_index(path_to_image, ['NDVI'])
 
     return 0
+
+
+
+
+    # # Check the directory to see which files are already there
+    # old_file_dict = {}
+    # for t in tile_list:
+    #     path = "/home/maksimov/sen2chain_data/data/L1C/" + t
+    #     old_file_dict[path] = os.listdir(path)
+    # # Download the new files
+    # # # New thread created here so the function .join() can be called later
+    # # thread_dl = threading.Thread(target=sen2chain.DownloadAndProcess,
+    # #                              kwargs={'identifiers': req, 'hubs_limit': {"scihub": 0, "peps": 8}})
+    # # thread_dl.start()
+    # # thread_dl.join()
+    #
+    # proc = Process(target=sen2chain.DownloadAndProcess,
+    #                kwargs={'identifiers': req, 'hubs_limit': {"scihub": 0, "peps": 8}})
+    # proc.start()
+    # proc.join()
+
+    #sen2chain.DownloadAndProcess(identifiers=req, hubs_limit={"scihub": 0, "peps": 8})
+
+    #time.sleep(3)
+    # Once the download has finished, we can check the given tiles folders to see which files have been added
+
+    # added_files_list = []
+    # for t in tile_list:
+    #     path = "/home/maksimov/sen2chain_data/data/L1C/" + t
+    #     file_list = os.listdir(path)
+    #     for f in file_list:
+    #         if f not in old_file_dict[path]:
+    #             added_files_list.append(f)
+
+
+
+    # return added_files_list
+    #
+
 
 
 """
@@ -63,29 +98,13 @@ def process_l1c_to_l2a(name):
     return 0
 
 
-"""
-*****************Index processing*****************
-"""
-
-
 def process_index(path: str,
                   list_indexes: [str]):
 
-    img_path = path + "GRANULE/"
-    img_path += sorted(listdir(img_path))[0] + "/"
-    img_path += "IMG_DATA/"
 
-    results = {}
-    for index in list_indexes:
-        if index == 'NDVI':
-            results['NDVI'] = process_ndvi(img_path)
-        if index == 'NDWI':
-            results['NDWI'] = process_ndwi(img_path)
-        if index == 'NDMI':
-            results['NDMI'] = process_ndmi(img_path)
-        if index == 'NBR':
-            results['NBR'] = process_nbr(img_path)
-    return results
+
+
+    return 0
 
 
 def process_ndvi(path: str):
