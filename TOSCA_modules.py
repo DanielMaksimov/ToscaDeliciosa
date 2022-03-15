@@ -1,5 +1,8 @@
 import sen2chain
-import os
+from os import listdir
+import geopandas
+import csv
+from pyrasta.raster import Raster
 import time
 from multiprocessing import Process
 
@@ -73,7 +76,6 @@ def process_index(path: str,
 
     img_path = path + "GRANULE/"
     img_path += sorted(listdir(img_path))[0] + "/"
-    img_path += "IMG_DATA/"
 
     results = {}
     for index in list_indexes:
@@ -90,28 +92,106 @@ def process_index(path: str,
 
 def process_ndvi(path: str):
     # Rasters
-    ras4 = Raster(img4)
-    ras8 = Raster(img8)
+    path_raster = path + "IMG_DATA/R10m/"
+    print("Raster BO4:", sorted(listdir(path_raster))[3])
+    print("Raster B08:", sorted(listdir(path_raster))[4])
+    ras4 = Raster(sorted(listdir(path_raster))[3])
+    ras8 = Raster(sorted(listdir(path_raster))[4])
 
     # Try except block to manage cases where there is no cloud mask
     try:
-        mask = geopandas.GeoDataFrame.from_file(mask_file)
+        path_mask = path + "QI_DATA/MSK_CLOUDS_B00.gml"
+        mask = geopandas.GeoDataFrame.from_file(path_mask)
         ras4 = ras4.mask(mask)
         ras8 = ras8.mask(mask)
     except ValueError:
         print("No mask for this image")
 
-    # Cropland parcel
-    gp_parcelle = geopandas.read_file(parcel)
-    # CRS
-    gp_parcelle = gp_parcelle.to_crs(crs=ras4.crs)
+    # Stats
+    # # We use np.array() so that the + operator is element-wise addition
+    # red = np.array(ras4.zonal_stats(gp_parcelle, band=1, stats=["mean"])["mean"])
+    # pir = np.array(ras8.zonal_stats(gp_parcelle, band=1, stats=["mean"])["mean"])
+    # del ras4, ras8
+    # return (pir - red) / (pir + red)
+    return (ras8 - ras4) / (ras8 + ras4)
+
+
+def process_ndwi(path: str):
+    # Rasters
+    path_raster = path + "IMG_DATA/R10m/"
+    print("Raster BO3:", sorted(listdir(path_raster))[2])
+    print("Raster B08:", sorted(listdir(path_raster))[4])
+    ras3 = Raster(sorted(listdir(path_raster))[2])
+    ras8 = Raster(sorted(listdir(path_raster))[4])
+
+    # Try except block to manage cases where there is no cloud mask
+    try:
+        path_mask = path + "QI_DATA/MSK_CLOUDS_B00.gml"
+        mask = geopandas.GeoDataFrame.from_file(path_mask)
+        ras3 = ras3.mask(mask)
+        ras8 = ras8.mask(mask)
+    except ValueError:
+        print("No mask for this image")
 
     # Stats
-    # We use np.array() so that the + operator is element-wise addition
-    red = np.array(ras4.zonal_stats(gp_parcelle, band=1, stats=["mean"])["mean"])
-    pir = np.array(ras8.zonal_stats(gp_parcelle, band=1, stats=["mean"])["mean"])
-    del ras4, ras8
-    return (pir - red) / (pir + red)
+    # # We use np.array() so that the + operator is element-wise addition
+    # red = np.array(ras4.zonal_stats(gp_parcelle, band=1, stats=["mean"])["mean"])
+    # pir = np.array(ras8.zonal_stats(gp_parcelle, band=1, stats=["mean"])["mean"])
+    # del ras4, ras8
+    # return (pir - red) / (pir + red)
+    return (ras3 - ras8) / (ras3 + ras8)
+
+
+def process_nbr(path: str):
+    # Rasters
+    path_raster = path + "IMG_DATA/R20m/"
+    print("Raster BO8A:", sorted(listdir(path_raster))[7])
+    print("Raster B012:", sorted(listdir(path_raster))[9])
+    ras8a = Raster(sorted(listdir(path_raster))[7])
+    ras12 = Raster(sorted(listdir(path_raster))[9])
+
+    # Try except block to manage cases where there is no cloud mask
+    try:
+        path_mask = path + "QI_DATA/MSK_CLOUDS_B00.gml"
+        mask = geopandas.GeoDataFrame.from_file(path_mask)
+        ras8a = ras8a.mask(mask)
+        ras12 = ras12.mask(mask)
+    except ValueError:
+        print("No mask for this image")
+
+    # Stats
+    # # We use np.array() so that the + operator is element-wise addition
+    # red = np.array(ras4.zonal_stats(gp_parcelle, band=1, stats=["mean"])["mean"])
+    # pir = np.array(ras8.zonal_stats(gp_parcelle, band=1, stats=["mean"])["mean"])
+    # del ras4, ras8
+    # return (pir - red) / (pir + red)
+    return (ras8a - ras12) / (ras8a + ras12)
+
+
+def process_ndmi(path: str):
+    # Rasters
+    path_raster = path + "IMG_DATA/R20m/"
+    print("Raster BO8A:", sorted(listdir(path_raster))[7])
+    print("Raster B011:", sorted(listdir(path_raster))[8])
+    ras8a = Raster(sorted(listdir(path_raster))[7])
+    ras11 = Raster(sorted(listdir(path_raster))[8])
+
+    # Try except block to manage cases where there is no cloud mask
+    try:
+        path_mask = path + "QI_DATA/MSK_CLOUDS_B00.gml"
+        mask = geopandas.GeoDataFrame.from_file(path_mask)
+        ras8a = ras8a.mask(mask)
+        ras11 = ras11.mask(mask)
+    except ValueError:
+        print("No mask for this image")
+
+    # Stats
+    # # We use np.array() so that the + operator is element-wise addition
+    # red = np.array(ras4.zonal_stats(gp_parcelle, band=1, stats=["mean"])["mean"])
+    # pir = np.array(ras8.zonal_stats(gp_parcelle, band=1, stats=["mean"])["mean"])
+    # del ras4, ras8
+    # return (pir - red) / (pir + red)
+    return (ras8a - ras11) / (ras8a + ras11)
 
 """
 Si %cloud trop grand, on "vire" la photo
