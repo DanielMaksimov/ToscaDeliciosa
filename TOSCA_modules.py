@@ -106,13 +106,6 @@ def process_ndvi(path: str):
         ras8 = ras8.mask(mask)
     except ValueError:
         print("No mask for this image")
-
-    # Stats
-    # # We use np.array() so that the + operator is element-wise addition
-    # red = np.array(ras4.zonal_stats(gp_parcelle, band=1, stats=["mean"])["mean"])
-    # pir = np.array(ras8.zonal_stats(gp_parcelle, band=1, stats=["mean"])["mean"])
-    # del ras4, ras8
-    # return (pir - red) / (pir + red)
     return (ras8 - ras4) / (ras8 + ras4)
 
 
@@ -132,13 +125,6 @@ def process_ndwi(path: str):
         ras8 = ras8.mask(mask)
     except ValueError:
         print("No mask for this image")
-
-    # Stats
-    # # We use np.array() so that the + operator is element-wise addition
-    # red = np.array(ras4.zonal_stats(gp_parcelle, band=1, stats=["mean"])["mean"])
-    # pir = np.array(ras8.zonal_stats(gp_parcelle, band=1, stats=["mean"])["mean"])
-    # del ras4, ras8
-    # return (pir - red) / (pir + red)
     return (ras3 - ras8) / (ras3 + ras8)
 
 
@@ -158,13 +144,6 @@ def process_nbr(path: str):
         ras12 = ras12.mask(mask)
     except ValueError:
         print("No mask for this image")
-
-    # Stats
-    # # We use np.array() so that the + operator is element-wise addition
-    # red = np.array(ras4.zonal_stats(gp_parcelle, band=1, stats=["mean"])["mean"])
-    # pir = np.array(ras8.zonal_stats(gp_parcelle, band=1, stats=["mean"])["mean"])
-    # del ras4, ras8
-    # return (pir - red) / (pir + red)
     return (ras8a - ras12) / (ras8a + ras12)
 
 
@@ -184,13 +163,6 @@ def process_ndmi(path: str):
         ras11 = ras11.mask(mask)
     except ValueError:
         print("No mask for this image")
-
-    # Stats
-    # # We use np.array() so that the + operator is element-wise addition
-    # red = np.array(ras4.zonal_stats(gp_parcelle, band=1, stats=["mean"])["mean"])
-    # pir = np.array(ras8.zonal_stats(gp_parcelle, band=1, stats=["mean"])["mean"])
-    # del ras4, ras8
-    # return (pir - red) / (pir + red)
     return (ras8a - ras11) / (ras8a + ras11)
 
 """
