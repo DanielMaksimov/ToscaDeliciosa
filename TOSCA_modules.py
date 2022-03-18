@@ -38,16 +38,20 @@ def download_image(start_date: str,
         # Image processing
         process_l1c_to_l2a(name)
 
-        # Index extraction
+        # String manipulation to work in the right folder
+        name = name[:8] + "2A" + name[10:]
         temp_tile = name.split("_")[-2][1:]
         path_to_image = SEN2CHAIN_DATA_PATH + "data/L2A/" + temp_tile + "/" + name + "/"
         print("Working on image:", path_to_image)
+
+        # Index extraction
         results = process_index(path_to_image, ['NDVI'])
 
         # Database update
         with open("/home/maksimov/DATABASE_TEST.csv", 'a+', newline='') as f:
             print("Writing in file " + "/home/maksimov/DATABASE_TEST.csv")
-            
+            write = csv.writer(f)
+            write.writerows(results)
         # Image deletion
 
     return 0
