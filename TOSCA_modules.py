@@ -2,6 +2,7 @@ import sen2chain
 import geopandas
 import csv
 import time
+import numpy as np
 from os import listdir
 from pyrasta.raster import Raster
 from multiprocessing import Process
@@ -26,8 +27,11 @@ def download_image(start_date: str,
 
     # First request that shows the number of images to download
     request = sen2chain.DataRequest(start_date, end_date).from_tiles(tile_list)
-
     image_names = list(request['hubs'].keys())
+
+    # results variable where the indexes will be stored
+    results = {'NDVI': [], 'NDWI': [], 'NDMI': [], 'NBR': []}
+
     for name in image_names:
         # Temporary request that contains only one of the images of the main request
         temp_request = {'aws': {}, 'hubs': {name: request['hubs'][name]}}
@@ -45,14 +49,16 @@ def download_image(start_date: str,
         print("Working on image:", path_to_image)
 
         # Index extraction
-        results = process_index(path_to_image, ['NDVI'])
+        results = process_index(path_to_image, results)
 
-        # Database update
-        with open("/home/maksimov/DATABASE_TEST.csv", 'a+', newline='') as f:
-            print("Writing in file " + "/home/maksimov/DATABASE_TEST.csv")
-            write = csv.writer(f)
-            write.writerows(results)
         # Image deletion
+        # implement if user specified so
+
+    # Database update
+    with open("/home/maksimov/DATABASE_TEST.csv", 'a+', newline='') as f:
+        print("Writing in file " + "/home/maksimov/DATABASE_TEST.csv")
+        write = csv.writer(f)
+        write.writerows(results)
 
     return 0
 
@@ -78,21 +84,16 @@ def process_l1c_to_l2a(name):
 
 
 def process_index(path: str,
-                  list_indexes: [str]):
+                  results: dict):
 
     img_path = path + "GRANULE/"
     img_path += sorted(listdir(img_path))[0] + "/"
 
-    results = {}
-    for index in list_indexes:
-        if index == 'NDVI':
-            results['NDVI'] = process_ndvi(img_path)
-        if index == 'NDWI':
-            results['NDWI'] = process_ndwi(img_path)
-        if index == 'NDMI':
-            results['NDMI'] = process_ndmi(img_path)
-        if index == 'NBR':
-            results['NBR'] = process_nbr(img_path)
+    results['NDVI'].append(process_ndvi(img_path))
+    results['NDWI'].append(process_ndwi(img_path))
+    results['NDMI'].append(process_ndmi(img_path))
+    results['NBR'].append(process_nbr(img_path))
+
     return results
 
 
