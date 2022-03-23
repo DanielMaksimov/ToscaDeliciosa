@@ -2,6 +2,7 @@ import sen2chain
 import geopandas
 import csv
 import time
+import datetime
 import numpy as np
 from os import listdir
 from pyrasta.raster import Raster
@@ -29,8 +30,10 @@ def download_image(start_date: str,
     request = sen2chain.DataRequest(start_date, end_date).from_tiles(tile_list)
     image_names = list(request['hubs'].keys())
 
-    # results variable where the indexes will be stored
+    # Variable storing indexes
     results = {'NDVI': [], 'NDWI': [], 'NDMI': [], 'NBR': []}
+    # Variable storing dates
+    dates = []
 
     for name in image_names:
         # Temporary request that contains only one of the images of the main request
@@ -43,10 +46,14 @@ def download_image(start_date: str,
         process_l1c_to_l2a(name)
 
         # String manipulation to work in the right folder
-        name = name[:8] + "2A" + name[10:]
-        temp_tile = name.split("_")[-2][1:]
-        path_to_image = SEN2CHAIN_DATA_PATH + "data/L2A/" + temp_tile + "/" + name + "/"
+        name_2a = name[:8] + "2A" + name[10:]
+        temp_tile = name_2a.split("_")[-2][1:]
+        path_to_image = SEN2CHAIN_DATA_PATH + "data/L2A/" + temp_tile + "/" + name_2a + "/"
         print("Working on image:", path_to_image)
+
+        # Date extraction
+        sensing_date = name.split("_")[2][:8]
+        dates.append(pd.to_datetime(sensing_date, format="%Y\%m\%d"))
 
         # Index extraction
         results = process_index(path_to_image, results)
@@ -55,10 +62,15 @@ def download_image(start_date: str,
         # implement if user specified so
 
     # Database update
-    with open("/home/maksimov/DATABASE_TEST.csv", 'a+', newline='') as f:
-        print("Writing in file " + "/home/maksimov/DATABASE_TEST.csv")
-        write = csv.writer(f)
-        write.writerows(results)
+    store = pd.HDFStore("/home/maksimov/HDFStore_test.hdf5")
+    df = pd.DataFrame(results, index=dates)
+    store.append(temp_tile, df)
+    store.close()
+
+    # with open("/home/maksimov/DATABASE_TEST.csv", 'a+', newline='') as f:
+    #     print("Writing in file " + "/home/maksimov/DATABASE_TEST.csv")
+    #     write = csv.writer(f)
+    #     write.writerows(results)
 
     return 0
 
