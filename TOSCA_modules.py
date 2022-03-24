@@ -1,5 +1,6 @@
 import sen2chain
 import geopandas
+import pandas as pd
 import csv
 import time
 import datetime
@@ -8,7 +9,7 @@ from os import listdir
 from pyrasta.raster import Raster
 from multiprocessing import Process
 from math import nan
-SEN2CHAIN_DATA_PATH = "/home/daniel/sen2chain_data/"
+SEN2CHAIN_DATA_PATH = "/home/maksimov/sen2chain_data/"
 
 """
 *****************Downloading of images*****************
@@ -48,7 +49,7 @@ def download_image(start_date: str,
         # String manipulation to work in the right folder
         name_2a = name[:8] + "2A" + name[10:]
         temp_tile = name_2a.split("_")[-2][1:]
-        path_to_image = SEN2CHAIN_DATA_PATH + "data/L2A/" + temp_tile + "/" + name_2a + "/"
+        path_to_image = SEN2CHAIN_DATA_PATH + "data/L2A/" + temp_tile + "/" + name_2a + ".SAFE/"
         print("Working on image:", path_to_image)
 
         # Date extraction
@@ -56,21 +57,16 @@ def download_image(start_date: str,
         dates.append(pd.to_datetime(sensing_date, format="%Y\%m\%d"))
 
         # Index extraction
-        results = process_index(path_to_image, results)
+        process_index(path_to_image, results)
 
         # Image deletion
         # implement if user specified so
 
     # Database update
-    store = pd.HDFStore("/home/maksimov/HDFStore_test.hdf5")
+    store = pd.HDFStore("/home/maksimov/HDFStore_Sentinel2.hdf5")
     df = pd.DataFrame(results, index=dates)
     store.append(temp_tile, df)
     store.close()
-
-    # with open("/home/maksimov/DATABASE_TEST.csv", 'a+', newline='') as f:
-    #     print("Writing in file " + "/home/maksimov/DATABASE_TEST.csv")
-    #     write = csv.writer(f)
-    #     write.writerows(results)
 
     return 0
 
@@ -106,7 +102,7 @@ def process_index(path: str,
     results['NDMI'].append(process_ndmi(img_path))
     results['NBR'].append(process_nbr(img_path))
 
-    return results
+    return 0
 
 
 def process_ndvi(path: str):
@@ -114,8 +110,8 @@ def process_ndvi(path: str):
     path_raster = path + "IMG_DATA/R10m/"
     print("Raster BO4:", sorted(listdir(path_raster))[3])
     print("Raster B08:", sorted(listdir(path_raster))[4])
-    ras4 = Raster(sorted(listdir(path_raster))[3])
-    ras8 = Raster(sorted(listdir(path_raster))[4])
+    ras4 = Raster(path_raster + sorted(listdir(path_raster))[3])
+    ras8 = Raster(path_raster + sorted(listdir(path_raster))[4])
 
     # Try except block to manage cases where there is no cloud mask
     try:
@@ -133,8 +129,8 @@ def process_ndwi(path: str):
     path_raster = path + "IMG_DATA/R10m/"
     print("Raster BO3:", sorted(listdir(path_raster))[2])
     print("Raster B08:", sorted(listdir(path_raster))[4])
-    ras3 = Raster(sorted(listdir(path_raster))[2])
-    ras8 = Raster(sorted(listdir(path_raster))[4])
+    ras3 = Raster(path_raster + sorted(listdir(path_raster))[2])
+    ras8 = Raster(path_raster + sorted(listdir(path_raster))[4])
 
     # Try except block to manage cases where there is no cloud mask
     try:
@@ -152,8 +148,8 @@ def process_nbr(path: str):
     path_raster = path + "IMG_DATA/R20m/"
     print("Raster BO8A:", sorted(listdir(path_raster))[7])
     print("Raster B012:", sorted(listdir(path_raster))[9])
-    ras8a = Raster(sorted(listdir(path_raster))[7])
-    ras12 = Raster(sorted(listdir(path_raster))[9])
+    ras8a = Raster(path_raster + sorted(listdir(path_raster))[7])
+    ras12 = Raster(path_raster + sorted(listdir(path_raster))[9])
 
     # Try except block to manage cases where there is no cloud mask
     try:
@@ -171,8 +167,8 @@ def process_ndmi(path: str):
     path_raster = path + "IMG_DATA/R20m/"
     print("Raster BO8A:", sorted(listdir(path_raster))[7])
     print("Raster B011:", sorted(listdir(path_raster))[8])
-    ras8a = Raster(sorted(listdir(path_raster))[7])
-    ras11 = Raster(sorted(listdir(path_raster))[8])
+    ras8a = Raster(path_raster + sorted(listdir(path_raster))[7])
+    ras11 = Raster(path_raster + sorted(listdir(path_raster))[8])
 
     # Try except block to manage cases where there is no cloud mask
     try:
