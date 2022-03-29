@@ -41,10 +41,16 @@ def download_image(start_date: str,
         temp_request = {'aws': {}, 'hubs': {name: request['hubs'][name]}}
 
         # Image download
-        sen2chain.DownloadAndProcess(temp_request)
+        try:
+            sen2chain.DownloadAndProcess(temp_request)
+        except:
+            print("ERROR: Image " + name +" could not be downloaded")
 
         # Image processing
-        process_l1c_to_l2a(name)
+        try:
+            process_l1c_to_l2a(name)
+        except:
+            print("ERROR: Image " + name + " could not be processed to L2A")
 
         # String manipulation to work in the right folder
         name_2a = name[:8] + "2A" + name[10:]
@@ -52,12 +58,15 @@ def download_image(start_date: str,
         path_to_image = SEN2CHAIN_DATA_PATH + "data/L2A/" + temp_tile + "/" + name_2a + ".SAFE/"
         print("Working on image:", path_to_image)
 
-        # Date extraction
-        sensing_date = name.split("_")[2][:8]
-        dates.append(pd.to_datetime(sensing_date, format="%Y\%m\%d"))
+        try:
+            # Index extraction
+            process_index(path_to_image, results)
 
-        # Index extraction
-        process_index(path_to_image, results)
+            # Date extraction
+            sensing_date = name.split("_")[2][:8]
+            dates.append(pd.to_datetime(sensing_date, format="%Y\%m\%d"))
+        except:
+            print("ERROR: Image " + name + " could not be analysed")
 
         # Image deletion
         # implement if user specified so
@@ -121,7 +130,8 @@ def process_ndvi(path: str):
         ras8 = ras8.mask(mask)
     except ValueError:
         print("No mask for this image")
-    return (ras8 - ras4) / (ras8 + ras4)
+    ras = (ras8 - ras4) / (ras8 + ras4)
+    return ras.mean[0]
 
 
 def process_ndwi(path: str):
@@ -140,7 +150,8 @@ def process_ndwi(path: str):
         ras8 = ras8.mask(mask)
     except ValueError:
         print("No mask for this image")
-    return (ras3 - ras8) / (ras3 + ras8)
+    ras = (ras3 - ras8) / (ras3 + ras8)
+    return ras.mean[0]
 
 
 def process_nbr(path: str):
@@ -159,7 +170,8 @@ def process_nbr(path: str):
         ras12 = ras12.mask(mask)
     except ValueError:
         print("No mask for this image")
-    return (ras8a - ras12) / (ras8a + ras12)
+    ras = (ras8a - ras12) / (ras8a + ras12)
+    return ras.mean[0]
 
 
 def process_ndmi(path: str):
@@ -178,7 +190,8 @@ def process_ndmi(path: str):
         ras11 = ras11.mask(mask)
     except ValueError:
         print("No mask for this image")
-    return (ras8a - ras11) / (ras8a + ras11)
+    ras = (ras8a - ras11) / (ras8a + ras11)
+    return ras.mean[0]
 
 """
 Si %cloud trop grand, on "vire" la photo
@@ -186,4 +199,10 @@ pour ça, on peut soit
 1) enregistrer ce % qq part et comparer ensuite,
 2) soit virer direct
 variante 1) a l'air plus appropriée
+
+débat sur stockage raster ou raster.mean[0]
+
+API pour les données climatiques complexes ;
+Soit API openWeatherData (pas complètement opne source)
+soit dl de ERA5 tous les 5/10 jours
 """
