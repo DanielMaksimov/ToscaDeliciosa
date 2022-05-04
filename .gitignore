@@ -4,3 +4,4 @@ __pycache__/
 *$py.class
 
 credentials.py
+.idea/workspace.xml
