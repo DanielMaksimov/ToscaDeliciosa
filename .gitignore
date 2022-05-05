@@ -5,4 +5,9 @@ __pycache__/
 
 credentials.py
 .idea/workspace.xml
+.idea/modules.xml
+.idea/misc.xml
+.idea/inspectionProfiles/profiles_settings.xml
+.idea/ToscaDeliciosa.iml
+
 data/
