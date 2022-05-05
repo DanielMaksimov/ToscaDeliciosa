@@ -6,6 +6,8 @@ import searchtweets as st
 import urllib.parse
 import credentials
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 consumer_key = credentials.consumer_key
 consumer_secret = credentials.consumer_secret
@@ -120,5 +122,73 @@ def city_data(city: str, country: str, start_date: str):
     plt.show()
 
 
+def bounding_box_data(bounding_box: [int], start_date: str):
+    # The query made to get info on our city
+    base_url = "https://api.twitter.com/2/tweets/search/all?query=" + \
+               urllib.parse.quote("bounding_box:" + str(bounding_box).replace(',', '')) + \
+               " -is:retweet&tweet.fields=geo&start_time=" + \
+               urllib.parse.quote(start_date + "T00:00:01.000Z")
+    base_list = []
+    # Sending the query
+    json_response = connect_to_endpoint(base_url)
+
+    for i in range(len(json_response["data"])):
+        if "coordinates" in json_response["data"][i]["geo"] and \
+                json_response["data"][i]["geo"]["coordinates"]["type"] == "Point":
+            base_list.append(json_response["data"][i]["geo"]["coordinates"]["coordinates"])
+    # print(json.dumps(json_response, indent=4, sort_keys=True))
+    while 'next_token' in json_response['meta']:
+        pag_token = json_response['meta']['next_token']
+        url = base_url + "&pagination_token=" + pag_token
+        json_response = connect_to_endpoint(url)
+        # print(json.dumps(json_response, indent=4, sort_keys=True))
+        for i in range(len(json_response["data"])):
+            if "coordinates" in json_response["data"][i]["geo"] and \
+                    json_response["data"][i]["geo"]["coordinates"]["type"] == "Point":
+                base_list.append(json_response["data"][i]["geo"]["coordinates"]["coordinates"])
+
+    store = pd.HDFStore("/home/maksimov/HDFStore_Twitter_Rio.hdf5")
+    store.append('Rio', base_list)
+    store.close()
+
+    """
+    for i in range(len(json_response["data"])):
+        dic[json_response["data"][i]["start"]] = json_response["data"][i]["tweet_count"]
+
+    while 'next_token' in json_response['meta']:
+        total_nb += json_response['meta']['total_tweet_count']
+        pag_token = json_response['meta']['next_token']
+        url = base_url + "&pagination_token=" + pag_token
+        json_response = connect_to_endpoint(url)
+        print(json.dumps(json_response, indent=4, sort_keys=True))
+        for j in range(len(json_response["data"])):
+            dic[json_response["data"][j]["start"]] = json_response["data"][j]["tweet_count"]
+
+    """
+    return 0
+
+
+def create_geo_array(x_min, x_max, y_min, y_max, nb_points):
+    x = np.linspace(x_min, x_max, nb_points)
+    y = np.linspace(y_min, y_max, nb_points)
+    mat = np.zeros((nb_points, nb_points))
+    return x, y, mat
+
+
+def fill_geo_array(mat, x, y, coordinates):
+    """Returns a grid array with each value representing the number of points in that square"""
+    mat_copy = np.copy(mat)
+    for point in coordinates:
+        lon, lat = point[0], point[1]
+        i, j = 1, 1
+        while lon > x[i] and i < len(x) - 1:
+            i += 1
+        while lat > y[j] and j < len(y) - 1:
+            j += 1
+        mat[j-1][i-1] += 1
+    return mat_copy
+
+
 if __name__ == "__main__":
-    city_data("montpellier", "FR", "2022-04-01")
+    bbox = np.array([-43.419633, -23.008085, -43.147179, -22.833099])
+    bounding_box_data(bbox, "2022-05-05")
