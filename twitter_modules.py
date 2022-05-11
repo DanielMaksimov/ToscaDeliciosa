@@ -8,6 +8,7 @@ import credentials
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import time
 
 consumer_key = credentials.consumer_key
 consumer_secret = credentials.consumer_secret
@@ -124,6 +125,7 @@ def city_data(city: str, country: str, start_date: str):
 
 def bounding_box_data(bounding_box: [int], start_date: str):
     # The query made to get info on our city
+    time.sleep(900)
     base_url = "https://api.twitter.com/2/tweets/search/all?query=" + \
                urllib.parse.quote("bounding_box:" + str(bounding_box).replace(',', '')) + \
                " -is:retweet&tweet.fields=geo&start_time=" + \
@@ -138,6 +140,7 @@ def bounding_box_data(bounding_box: [int], start_date: str):
             base_list.append(json_response["data"][i]["geo"]["coordinates"]["coordinates"])
     # print(json.dumps(json_response, indent=4, sort_keys=True))
     while 'next_token' in json_response['meta']:
+        time.sleep(1.1)
         pag_token = json_response['meta']['next_token']
         url = base_url + "&pagination_token=" + pag_token
         json_response = connect_to_endpoint(url)
@@ -146,8 +149,8 @@ def bounding_box_data(bounding_box: [int], start_date: str):
             if "coordinates" in json_response["data"][i]["geo"] and \
                     json_response["data"][i]["geo"]["coordinates"]["type"] == "Point":
                 base_list.append(json_response["data"][i]["geo"]["coordinates"]["coordinates"])
-
-    store = pd.HDFStore("/home/maksimov/HDFStore_Twitter_Rio.hdf5")
+    # must be dataframe to put in store
+    store = pd.HDFStore("/home/maksimov/ToscaDeliciosa/data/HDFStore_Twitter_Rio.hdf5")
     store.append('Rio', base_list)
     store.close()
 
@@ -191,4 +194,4 @@ def fill_geo_array(mat, x, y, coordinates):
 
 if __name__ == "__main__":
     bbox = np.array([-43.419633, -23.008085, -43.147179, -22.833099])
-    bounding_box_data(bbox, "2022-05-05")
+    bounding_box_data(bbox, "2022-04-05")
