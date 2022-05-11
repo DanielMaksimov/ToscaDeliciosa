@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 
 credentials.py
+.idea
 .idea/workspace.xml
 .idea/modules.xml
 .idea/misc.xml
