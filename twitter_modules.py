@@ -125,33 +125,47 @@ def city_data(city: str, country: str, start_date: str):
 
 def bounding_box_data(bounding_box: [int], start_date: str):
     # The query made to get info on our city
-    time.sleep(900)
     base_url = "https://api.twitter.com/2/tweets/search/all?query=" + \
                urllib.parse.quote("bounding_box:" + str(bounding_box).replace(',', '')) + \
                " -is:retweet&tweet.fields=geo&start_time=" + \
                urllib.parse.quote(start_date + "T00:00:01.000Z")
-    base_list = []
+    store = pd.HDFStore("/home/maksimov/ToscaDeliciosa/data/HDFStore_Twitter_Rio.hdf5")
+
     # Sending the query
     json_response = connect_to_endpoint(base_url)
-
-    for i in range(len(json_response["data"])):
-        if "coordinates" in json_response["data"][i]["geo"] and \
-                json_response["data"][i]["geo"]["coordinates"]["type"] == "Point":
-            base_list.append(json_response["data"][i]["geo"]["coordinates"]["coordinates"])
-    # print(json.dumps(json_response, indent=4, sort_keys=True))
+    # Extracting data
     while 'next_token' in json_response['meta']:
-        time.sleep(1.1)
-        pag_token = json_response['meta']['next_token']
-        url = base_url + "&pagination_token=" + pag_token
-        json_response = connect_to_endpoint(url)
+        time.sleep(2)
         # print(json.dumps(json_response, indent=4, sort_keys=True))
         for i in range(len(json_response["data"])):
+            coordinates_list = []
             if "coordinates" in json_response["data"][i]["geo"] and \
                     json_response["data"][i]["geo"]["coordinates"]["type"] == "Point":
-                base_list.append(json_response["data"][i]["geo"]["coordinates"]["coordinates"])
-    # must be dataframe to put in store
-    store = pd.HDFStore("/home/maksimov/ToscaDeliciosa/data/HDFStore_Twitter_Rio.hdf5")
-    store.append('Rio', base_list)
+                coordinates = json_response["data"][i]["geo"]["coordinates"]["coordinates"]
+                coordinates_list.append(coordinates)
+                # base_list.append(json_response["data"][i]["geo"]["coordinates"]["coordinates"])
+        # Converting to dataframe and adding to store
+        page_df = pd.DataFrame(coordinates_list, columns=['lon', 'lat'])
+        store.append('data_geo', page_df)
+
+        # Saving the page
+        pag_token = json_response['meta']['next_token']
+        store.append('data_pag', pag_token)
+
+        # Building the next query
+        url = base_url + "&pagination_token=" + pag_token
+        json_response = connect_to_endpoint(url)
+
+    # Last page
+    for i in range(len(json_response["data"])):
+        coordinates_list = []
+        if "coordinates" in json_response["data"][i]["geo"] and \
+                json_response["data"][i]["geo"]["coordinates"]["type"] == "Point":
+            coordinates = json_response["data"][i]["geo"]["coordinates"]["coordinates"]
+            coordinates_list.append(coordinates)
+    page_df = pd.DataFrame(coordinates_list, columns=['lon', 'lat'])
+    store.append('data_geo', page_df)
+    # print(json.dumps(json_response, indent=4, sort_keys=True))
     store.close()
 
     """
