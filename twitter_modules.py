@@ -128,17 +128,18 @@ def bounding_box_data(bounding_box: [int], start_date: str):
     base_url = "https://api.twitter.com/2/tweets/search/all?query=" + \
                urllib.parse.quote("bounding_box:" + str(bounding_box).replace(',', '')) + \
                " -is:retweet&tweet.fields=geo&start_time=" + \
-               urllib.parse.quote(start_date + "T00:00:01.000Z")
-    store = pd.HDFStore("/home/maksimov/ToscaDeliciosa/data/HDFStore_Twitter_Rio.hdf5")
+               urllib.parse.quote(start_date + "T00:00:01.000Z") + \
+               "&max_results=500"
+    store = pd.HDFStore("/home/maksimov/ToscaDeliciosa/data/HDFStore_Twitter_Rio_2.hdf5")
 
     # Sending the query
     json_response = connect_to_endpoint(base_url)
     # Extracting data
     while 'next_token' in json_response['meta']:
         time.sleep(2)
+        coordinates_list = []
         # print(json.dumps(json_response, indent=4, sort_keys=True))
         for i in range(len(json_response["data"])):
-            coordinates_list = []
             if "coordinates" in json_response["data"][i]["geo"] and \
                     json_response["data"][i]["geo"]["coordinates"]["type"] == "Point":
                 coordinates = json_response["data"][i]["geo"]["coordinates"]["coordinates"]
@@ -146,11 +147,11 @@ def bounding_box_data(bounding_box: [int], start_date: str):
                 # base_list.append(json_response["data"][i]["geo"]["coordinates"]["coordinates"])
         # Converting to dataframe and adding to store
         page_df = pd.DataFrame(coordinates_list, columns=['lon', 'lat'])
-        store.append('data_geo', page_df)
-
+        store.append('data_geo', page_df, format='t')
         # Saving the page
         pag_token = json_response['meta']['next_token']
-        store.append('data_pag', pag_token)
+        df_pag_token = pd.DataFrame([[pag_token]], columns=['next_pag_token'])
+        store.append('data_pag', df_pag_token, format='t')
 
         # Building the next query
         url = base_url + "&pagination_token=" + pag_token
@@ -164,7 +165,7 @@ def bounding_box_data(bounding_box: [int], start_date: str):
             coordinates = json_response["data"][i]["geo"]["coordinates"]["coordinates"]
             coordinates_list.append(coordinates)
     page_df = pd.DataFrame(coordinates_list, columns=['lon', 'lat'])
-    store.append('data_geo', page_df)
+    store.append('data_geo', page_df, format='t')
     # print(json.dumps(json_response, indent=4, sort_keys=True))
     store.close()
 
@@ -208,4 +209,4 @@ def fill_geo_array(mat, x, y, coordinates):
 
 if __name__ == "__main__":
     bbox = np.array([-43.419633, -23.008085, -43.147179, -22.833099])
-    bounding_box_data(bbox, "2022-04-05")
+    bounding_box_data(bbox, "2022-05-02")
