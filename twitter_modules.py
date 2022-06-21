@@ -144,7 +144,6 @@ def bounding_box_data(bounding_box: [int], start_date: str):
                     json_response["data"][i]["geo"]["coordinates"]["type"] == "Point":
                 coordinates = json_response["data"][i]["geo"]["coordinates"]["coordinates"]
                 coordinates_list.append(coordinates)
-                # base_list.append(json_response["data"][i]["geo"]["coordinates"]["coordinates"])
         # Converting to dataframe and adding to store
         page_df = pd.DataFrame(coordinates_list, columns=['lon', 'lat'])
         store.append('data_geo', page_df, format='t')
