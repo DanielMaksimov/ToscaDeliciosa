@@ -16,12 +16,14 @@ SEN2CHAIN_DATA_PATH = "/home/maksimov/sen2chain_data/"
 """
 
 
-def download_image(start_date: str,
+def download_image_tile(start_date: str,
                    end_date: str,
                    tile_list: [str]) -> [str]:
     """
     Downloads the images of the given tiles between start_date and end_date.
     Returns a list containing  the identifiers of the downloaded images
+    Creates a .hdf file containing the time series for NDVI, NDWI, NDMI and NBR
+
     :param start_date: str, starting date of the time period
     :param end_date: str, ending date of the time period
     :param tile_list: [str], list of tiles to monitor
@@ -79,7 +81,70 @@ def download_image(start_date: str,
 
     return 0
 
+def download_image_gdf(start_date: str,
+                   end_date: str,
+                   geodataframe: str) -> [str]:
+    """
+    Downloads the images of the given geodataframes between start_date and end_date.
+    Returns a list containing  the identifiers of the downloaded images
+    Creates a .hdf file containing the time series for NDVI, NDWI, NDMI and NBR
 
+    :param start_date: str, starting date of the time period
+    :param end_date: str, ending date of the time period
+    :param geodataframe: str, path to file containing the polygons to monitor
+    """
+
+    # First request that shows the number of images to download
+    request = sen2chain.DataRequest(start_date, end_date).from_file(geodataframe)
+    image_names = list(request['hubs'].keys())
+
+    # Variable storing indexes
+    results = {'NDVI': [], 'NDWI': [], 'NDMI': [], 'NBR': []}
+    # Variable storing dates
+    dates = []
+
+    for name in image_names:
+        # Temporary request that contains only one of the images of the main request
+        temp_request = {'aws': {}, 'hubs': {name: request['hubs'][name]}}
+
+        # Image download
+        try:
+            sen2chain.DownloadAndProcess(temp_request)
+        except:
+            print("ERROR: Image " + name +" could not be downloaded")
+
+        # Image processing
+        try:
+            process_l1c_to_l2a(name)
+        except:
+            print("ERROR: Image " + name + " could not be processed to L2A")
+
+        # String manipulation to work in the right folder
+        name_2a = name[:8] + "2A" + name[10:]
+        temp_tile = name_2a.split("_")[-2][1:]
+        path_to_image = SEN2CHAIN_DATA_PATH + "data/L2A/" + temp_tile + "/" + name_2a + ".SAFE/"
+        print("Working on image:", path_to_image)
+        #########################CHANGE TO ZONAL STATS HERE
+        try:
+            # Index extraction
+            process_index(path_to_image, results)
+
+            # Date extraction
+            sensing_date = name.split("_")[2][:8]
+            dates.append(pd.to_datetime(sensing_date, format="%Y\%m\%d"))
+        except:
+            print("ERROR: Image " + name + " could not be analysed")
+
+        # Image deletion
+        # implement if user specified so
+
+    # Database update
+    store = pd.HDFStore("/home/maksimov/HDFStore_Sentinel2.hdf5")
+    df = pd.DataFrame(results, index=dates)
+    store.append(temp_tile, df)
+    store.close()
+
+    return 0
 """
 *****************L1C to L2A*****************
 """
