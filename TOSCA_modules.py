@@ -1,6 +1,7 @@
 import sen2chain
 import geopandas
 import pandas as pd
+from shapely.geometry import Polygon
 import csv
 import time
 import datetime
@@ -10,6 +11,7 @@ from pyrasta.raster import Raster
 from multiprocessing import Process
 from math import nan
 SEN2CHAIN_DATA_PATH = "/home/maksimov/sen2chain_data/"
+
 
 """
 *****************Downloading of images*****************
@@ -81,9 +83,11 @@ def download_image_tile(start_date: str,
 
     return 0
 
+
 def download_image_gdf(start_date: str,
                    end_date: str,
-                   geodataframe: str) -> [str]:
+                   geodataframe: str,
+                   file_output: str) -> [str]:
     """
     Downloads the images of the given geodataframes between start_date and end_date.
     Returns a list containing  the identifiers of the downloaded images
@@ -119,32 +123,45 @@ def download_image_gdf(start_date: str,
         except:
             print("ERROR: Image " + name + " could not be processed to L2A")
 
-        # String manipulation to work in the right folder
-        name_2a = name[:8] + "2A" + name[10:]
-        temp_tile = name_2a.split("_")[-2][1:]
-        path_to_image = SEN2CHAIN_DATA_PATH + "data/L2A/" + temp_tile + "/" + name_2a + ".SAFE/"
-        print("Working on image:", path_to_image)
-        #########################CHANGE TO ZONAL STATS HERE
-        try:
-            # Index extraction
-            process_index(path_to_image, results)
+    #     # String manipulation to work in the right folder
+    #     name_2a = name[:8] + "2A" + name[10:]
+    #     temp_tile = name_2a.split("_")[-2][1:]
+    #     path_to_image = SEN2CHAIN_DATA_PATH + "data/L2A/" + temp_tile + "/" + name_2a + ".SAFE/"
+    #     print("Working on image:", path_to_image)
+    #     #########################CHANGE TO ZONAL STATS HERE
 
-            # Date extraction
-            sensing_date = name.split("_")[2][:8]
-            dates.append(pd.to_datetime(sensing_date, format="%Y\%m\%d"))
-        except:
-            print("ERROR: Image " + name + " could not be analysed")
+        gdf_municipality = geopandas.GeoDataFrame.from_file("truc_bresil.shp")  # !!!CHANGE NAME
+        big_raster_red = Raster.merge(list_of_rasters_red)
+        big_raster_pir = Raster.merge(list_of_rasters_pir)
 
-        # Image deletion
-        # implement if user specified so
+        red = np.array(big_raster.zonal_stats(gdf_municipality, stats=["mean"])["mean"])
+        pir = np.array(big_raster.zonal_stats(gdf_municipality, stats=["mean"])["mean"])
 
-    # Database update
-    store = pd.HDFStore("/home/maksimov/HDFStore_Sentinel2.hdf5")
-    df = pd.DataFrame(results, index=dates)
-    store.append(temp_tile, df)
-    store.close()
+        ndvi_val = (pir - red) / (pir + red)
+    #     try:
+    #         # Index extraction
+    #         process_index(path_to_image, results)
+    #
+    #         # Date extraction
+    #         sensing_date = name.split("_")[2][:8]
+    #         dates.append(pd.to_datetime(sensing_date, format="%Y\%m\%d"))
+    #     except:
+    #         print("ERROR: Image " + name + " could not be analysed")
+    #
+    #     # Image deletion
+    #     # implement if user specified so
+    #
+    # # Database update
+    # store = pd.HDFStore(file_output)
+    # df = pd.DataFrame(results, index=dates)
+    # store.append(temp_tile, df)
+    # store.close()
 
     return 0
+
+
+# "/home/maksimov/HDFStore_Sentinel2_Brasilia_Mun.hdf5"
+
 """
 *****************L1C to L2A*****************
 """
@@ -258,6 +275,61 @@ def process_ndmi(path: str):
     ras = (ras8a - ras11) / (ras8a + ras11)
     return ras.mean[0]
 
+
+# def create_grid(xmin,ymax,cell_number, grid_size=1):
+#     #xmin,ymin,xmax,ymax =  points.total_bounds
+#     #width = 2000
+#     #height = 1000
+#     #rows = int(np.ceil((ymax-ymin) /  height))
+#     #cols = int(np.ceil((xmax-xmin) / width))
+#     XleftOrigin = xmin
+#     XrightOrigin = xmin + grid_size * cell_number
+#     YtopOrigin = ymax
+#     YbottomOrigin = ymax - grid_size * cell_number
+#     polygons = []
+#     for i in range(cell_number):
+#        Ytop = YtopOrigin
+#        Ybottom =YbottomOrigin
+#        for j in range(cell_number):
+#            polygons.append(Polygon([(XleftOrigin, Ytop), (XrightOrigin, Ytop), (XrightOrigin, Ybottom), (XleftOrigin, Ybottom)]))
+#            Ytop = Ytop - grid_size
+#            Ybottom = Ybottom - grid_size
+#        XleftOrigin = XleftOrigin + grid_size
+#        XrightOrigin = XrightOrigin + grid_size
+#     grid = geopandas.GeoDataFrame({'geometry':polygons})
+#     grid.to_file("/home/maksimov/TEST_grid.shp")
+#     return 0
+
+
+"""
+*****************Raster processing*****************
+"""
+
+
+def majority_count(zone):
+    return np.argmax([np.sum(zone == n) for n in np.arange(6) + 1]) + 1
+
+
+def create_grid(xmin, xmax, ymin, ymax, grid_size=0.001):
+    rows = int(np.ceil((ymax-ymin) / grid_size))
+    cols = int(np.ceil((xmax-xmin) / grid_size))
+    XleftOrigin = xmin
+    XrightOrigin = xmin + grid_size
+    YtopOrigin = ymax
+    YbottomOrigin = ymax - grid_size
+    polygons = []
+    for i in range(cols):
+       Ytop = YtopOrigin
+       Ybottom =YbottomOrigin
+       for j in range(rows):
+           polygons.append(Polygon([(XleftOrigin, Ytop), (XrightOrigin, Ytop), (XrightOrigin, Ybottom), (XleftOrigin, Ybottom)]))
+           Ytop = Ytop - grid_size
+           Ybottom = Ybottom - grid_size
+       XleftOrigin = XleftOrigin + grid_size
+       XrightOrigin = XrightOrigin + grid_size
+    grid = geopandas.GeoDataFrame({'geometry':polygons})
+    grid.to_file("/home/maksimov/TEST_grid.shp")
+    return 0
 """
 Si %cloud trop grand, on "vire" la photo
 pour ça, on peut soit 
