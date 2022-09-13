@@ -1,7 +1,9 @@
 import sen2chain
 import geopandas
 import pandas as pd
+import rioxarray as rxr
 from shapely.geometry import Polygon
+import gistools
 import csv
 import time
 import datetime
@@ -19,8 +21,9 @@ SEN2CHAIN_DATA_PATH = "/home/maksimov/sen2chain_data/"
 
 
 def download_image_tile(start_date: str,
-                   end_date: str,
-                   tile_list: [str]) -> [str]:
+                        end_date: str,
+                        tile_list: [str],
+                        file_output: str) -> [str]:
     """
     Downloads the images of the given tiles between start_date and end_date.
     Returns a list containing  the identifiers of the downloaded images
@@ -29,58 +32,62 @@ def download_image_tile(start_date: str,
     :param start_date: str, starting date of the time period
     :param end_date: str, ending date of the time period
     :param tile_list: [str], list of tiles to monitor
+    :param file_output: str, name of the file containing the output data
     """
 
-    # First request that shows the number of images to download
-    request = sen2chain.DataRequest(start_date, end_date).from_tiles(tile_list)
-    image_names = list(request['hubs'].keys())
+    store = pd.HDFStore(file_output)
 
-    # Variable storing indexes
-    results = {'NDVI': [], 'NDWI': [], 'NDMI': [], 'NBR': []}
-    # Variable storing dates
-    dates = []
+    for tile in tile_list:
+        # First request that shows the number of images to download
+        request = sen2chain.DataRequest(start_date, end_date).from_tiles(tile)
+        image_names = list(request['hubs'].keys())
 
-    for name in image_names:
-        # Temporary request that contains only one of the images of the main request
-        temp_request = {'aws': {}, 'hubs': {name: request['hubs'][name]}}
+        # Variable storing indexes
+        results = {'NDVI': [], 'NDWI': [], 'NDMI': [], 'NBR': []}
+        # Variable storing dates
+        dates = []
 
-        # Image download
-        try:
-            sen2chain.DownloadAndProcess(temp_request)
-        except:
-            print("ERROR: Image " + name +" could not be downloaded")
+        for name in image_names:
+            # Temporary request that contains only one of the images of the main request
+            temp_request = {'aws': {}, 'hubs': {name: request['hubs'][name]}}
 
-        # Image processing
-        try:
-            process_l1c_to_l2a(name)
-        except:
-            print("ERROR: Image " + name + " could not be processed to L2A")
+            # Image download
+            try:
+                sen2chain.DownloadAndProcess(temp_request)
+            except:
+                print("ERROR: Image " + name +" could not be downloaded")
 
-        # String manipulation to work in the right folder
-        name_2a = name[:8] + "2A" + name[10:]
-        temp_tile = name_2a.split("_")[-2][1:]
-        path_to_image = SEN2CHAIN_DATA_PATH + "data/L2A/" + temp_tile + "/" + name_2a + ".SAFE/"
-        print("Working on image:", path_to_image)
+            # Image processing
+            try:
+                process_l1c_to_l2a(name)
+            except:
+                print("ERROR: Image " + name + " could not be processed to L2A")
 
-        try:
-            # Index extraction
-            process_index(path_to_image, results)
+            # String manipulation to work in the right folder
+            name_2a = name[:8] + "2A" + name[10:]
+            temp_tile = name_2a.split("_")[-2][1:]
+            path_to_image = SEN2CHAIN_DATA_PATH + "data/L2A/" + temp_tile + "/" + name_2a + ".SAFE/"
+            print("Working on image:", path_to_image)
 
-            # Date extraction
-            sensing_date = name.split("_")[2][:8]
-            dates.append(pd.to_datetime(sensing_date, format="%Y\%m\%d"))
-        except:
-            print("ERROR: Image " + name + " could not be analysed")
+            try:
+                # Index extraction
+                process_index(path_to_image, results)
 
-        # Image deletion
-        # implement if user specified so
+                # Date extraction
+                sensing_date = name.split("_")[2][:8]
+                dates.append(pd.to_datetime(sensing_date, format="%Y\%m\%d"))
 
-    # Database update
-    store = pd.HDFStore("/home/maksimov/HDFStore_Sentinel2.hdf5")
-    df = pd.DataFrame(results, index=dates)
-    store.append(temp_tile, df)
+            except:
+                print("ERROR: Image " + name + " could not be analysed")
+
+            # Image deletion
+            # implement if user specified so
+
+        # Database update, with each key being a tile from the input list of tiles
+        df = pd.DataFrame(results, index=dates)
+        store.append(temp_tile, df)
+
     store.close()
-
     return 0
 
 
@@ -97,7 +104,7 @@ def download_image_gdf(start_date: str,
     :param end_date: str, ending date of the time period
     :param geodataframe: str, path to file containing the polygons to monitor
     """
-
+    
     # First request that shows the number of images to download
     request = sen2chain.DataRequest(start_date, end_date).from_file(geodataframe)
     image_names = list(request['hubs'].keys())
@@ -276,41 +283,16 @@ def process_ndmi(path: str):
     return ras.mean[0]
 
 
-# def create_grid(xmin,ymax,cell_number, grid_size=1):
-#     #xmin,ymin,xmax,ymax =  points.total_bounds
-#     #width = 2000
-#     #height = 1000
-#     #rows = int(np.ceil((ymax-ymin) /  height))
-#     #cols = int(np.ceil((xmax-xmin) / width))
-#     XleftOrigin = xmin
-#     XrightOrigin = xmin + grid_size * cell_number
-#     YtopOrigin = ymax
-#     YbottomOrigin = ymax - grid_size * cell_number
-#     polygons = []
-#     for i in range(cell_number):
-#        Ytop = YtopOrigin
-#        Ybottom =YbottomOrigin
-#        for j in range(cell_number):
-#            polygons.append(Polygon([(XleftOrigin, Ytop), (XrightOrigin, Ytop), (XrightOrigin, Ybottom), (XleftOrigin, Ybottom)]))
-#            Ytop = Ytop - grid_size
-#            Ybottom = Ybottom - grid_size
-#        XleftOrigin = XleftOrigin + grid_size
-#        XrightOrigin = XrightOrigin + grid_size
-#     grid = geopandas.GeoDataFrame({'geometry':polygons})
-#     grid.to_file("/home/maksimov/TEST_grid.shp")
-#     return 0
-
-
 """
 *****************Raster processing*****************
 """
 
 
 def majority_count(zone):
-    return np.argmax([np.sum(zone == n) for n in np.arange(6) + 1]) + 1
+    return np.argmax([np.sum(zone == n) for n in np.arange(1, 7)]) + 1
 
 
-def create_grid(xmin, xmax, ymin, ymax, grid_size=0.001):
+def create_grid(xmin, xmax, ymin, ymax, grid_size=1):
     rows = int(np.ceil((ymax-ymin) / grid_size))
     cols = int(np.ceil((xmax-xmin) / grid_size))
     XleftOrigin = xmin
@@ -327,7 +309,7 @@ def create_grid(xmin, xmax, ymin, ymax, grid_size=0.001):
            Ybottom = Ybottom - grid_size
        XleftOrigin = XleftOrigin + grid_size
        XrightOrigin = XrightOrigin + grid_size
-    grid = geopandas.GeoDataFrame({'geometry':polygons})
+    grid = geopandas.GeoDataFrame({'geometry':polygons}, crs="EPSG:4326")
     grid.to_file("/home/maksimov/TEST_grid.shp")
     return 0
 """

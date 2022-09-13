@@ -135,10 +135,28 @@ def merge_lists(l1, l2):
 # # data_global = merge_dicts(data_23LKC, data_22LHH)
 # # print(data_global)
 
-#create_grid(-48.189, -47.227, -16.053, -15.505)
-first_raster = Raster("/home/maksimov/Downloads/occupation_sol_S2/Classifications_fusion.tif").to_crs()
-print(first_raster.crs)
-# dataframe_brazil = geopandas.GeoDataFrame.from_file("/home/maksimov/TEST_grid.shp").to_crs(first_raster.crs)
-#
-# abc = first_raster.zonal_stats(layer=dataframe_brazil, customized_stats={'majority_count': majority_count})
+# create_grid(-48.189, -47.227, -16.053, -15.505)
+# dataframe_brazil = geopandas.GeoDataFrame.from_file("/home/maksimov/TEST_grid.shp")
+# # print(dataframe_brazil.crs)
+# first_raster = Raster("/home/maksimov/Downloads/occupation_sol_S2/Classifications_fusion.tif")
+# # print(first_raster.crs)
+# s_raster = first_raster.to_crs(crs='epsg:4326')
+# # print(s_raster.crs.to_epsg())
+# #
+# # #
+# # abc = s_raster.zonal_stats(layer=dataframe_brazil, stats={'count'})
+# abc = s_raster.zonal_stats(layer=dataframe_brazil, stats={'count'}, customized_stats={'majority_count': majority_count})
 # print(abc)
+#
+# Raster.rast
+# Try with the rioxarray library
+# my_raster = rxr.open_rasterio("/home/maksimov/Downloads/occupation_sol_S2/Classifications_fusion.tif")
+# print(my_raster.crs)
+
+#Densité bati
+from gistools.layer import PolygonLayer
+edificacao = PolygonLayer("/home/maksimov/Downloads/vecteurs/edificacao_full.shp")
+df_br = PolygonLayer("/home/maksimov/TEST_grid.shp")
+
+area = edificacao.intersecting_area(df_br, normalized=True)
+print(area)
