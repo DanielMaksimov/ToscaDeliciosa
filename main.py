@@ -134,8 +134,14 @@ def merge_lists(l1, l2):
 # print(ds['skt'][0][p3_lat][0][p3_lon][0]-273.15)
 # # data_global = merge_dicts(data_23LKC, data_22LHH)
 # # print(data_global)
+# min_lon = -48.3
+# max_lon = -47.440
+# step = 0.001
+# for i in range(1,1001):
+#     name = "/home/maksimov/building_density_grids/grid"+str(i)
+#     create_one_column_grid(name, min_lon, min_lon+step, -16.053, -15.505)
+#     min_lon = min_lon+step
 
-# create_grid(-48.189, -47.227, -16.053, -15.505)
 # dataframe_brazil = geopandas.GeoDataFrame.from_file("/home/maksimov/TEST_grid.shp")
 # # print(dataframe_brazil.crs)
 # first_raster = Raster("/home/maksimov/Downloads/occupation_sol_S2/Classifications_fusion.tif")
@@ -154,9 +160,43 @@ def merge_lists(l1, l2):
 # print(my_raster.crs)
 
 #Densité bati
+# from gistools.layer import PolygonLayer
+# edificacao = PolygonLayer("/home/maksimov/Downloads/vecteurs/edificacao_full.shp")
+# df_br = PolygonLayer("/home/maksimov/very_small_grid_density_test.shp")
+# df_br = df_br.to_crs(32722)
+#
+# area = df_br.intersecting_area(edificacao, normalized=True)
+# proportions = []
+# for i in range(len(area)):
+#     list.append(sum(area[i]))
+# print(list)
+
+# with open('hom/maksimov/DENSITE_BATI.txt', 'w') as f:
+#     for line in area:
+#         f.write(f"{line}\n")
+# ####################TEST1
+# from gistools.layer import PolygonLayer
+# test_intersecting = PolygonLayer("/home/maksimov/testing_intersecting_area.shp")
+# df_br = PolygonLayer("/home/maksimov/very_small_grid_density_test.shp")
+# gpd_br = geopandas.read_file("/home/maksimov/very_small_grid_density_test.shp")
+#
+# area = df_br.intersecting_area(test_intersecting, normalized=True)
+# proportions = []
+# for i in range(len(area)):
+#     proportions.append(sum(area[i]))
+#     gpd_br.loc[i, 'building_d'] = sum(area[i])
+# print(proportions)
+# gpd_br.to_file("/home/maksimov/very_small_grid_density_test.shp")
+
+
 from gistools.layer import PolygonLayer
 edificacao = PolygonLayer("/home/maksimov/Downloads/vecteurs/edificacao_full.shp")
-df_br = PolygonLayer("/home/maksimov/TEST_grid.shp")
+for i in range(1, 1001):
+    df_br = PolygonLayer("/home/maksimov/building_density_grids/grid"+str(i)+"/grid"+str(i)+".shp")
+    df_br = df_br.to_crs(32722)
+    gpd_br = geopandas.read_file("/home/maksimov/building_density_grids/grid"+str(i)+"/grid"+str(i)+".shp")
 
-area = edificacao.intersecting_area(df_br, normalized=True)
-print(area)
+    area = df_br.intersecting_area(edificacao, normalized=True)
+    for j in range(len(area)):
+        gpd_br.loc[j, 'building_d'] = sum(area[j])
+    gpd_br.to_file("/home/maksimov/building_density_grids/grid"+str(i)+"/grid_WITH_VALUE"+str(i)+".shp")
