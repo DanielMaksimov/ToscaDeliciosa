@@ -1,3 +1,4 @@
+import credentials
 import sen2chain
 import geopandas
 import pandas as pd
@@ -12,6 +13,10 @@ from os import listdir
 from pyrasta.raster import Raster
 from multiprocessing import Process
 from math import nan
+from landsatxplore.api import API
+from landsatxplore.earthexplorer import EarthExplorer
+
+
 SEN2CHAIN_DATA_PATH = "/home/maksimov/sen2chain_data/"
 
 
@@ -343,3 +348,5 @@ API pour les données climatiques complexes ;
 Soit API openWeatherData (pas complètement opne source)
 soit dl de ERA5 tous les 5/10 jours
 """
+
+

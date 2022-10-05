@@ -82,7 +82,7 @@ from ERA5_modules import *
 # plt.show()
 
 
-def merge_dicts(d1,d2):
+def merge_dicts(d1, d2):
     d3 = {}
     for key, value in d1.items():
         if key in d1 and key in d2:
@@ -191,7 +191,7 @@ def merge_lists(l1, l2):
 
 from gistools.layer import PolygonLayer
 edificacao = PolygonLayer("/home/maksimov/Downloads/vecteurs/edificacao_full.shp")
-for i in range(1, 1001):
+for i in range(255, 1001):
     df_br = PolygonLayer("/home/maksimov/building_density_grids/grid"+str(i)+"/grid"+str(i)+".shp")
     df_br = df_br.to_crs(32722)
     gpd_br = geopandas.read_file("/home/maksimov/building_density_grids/grid"+str(i)+"/grid"+str(i)+".shp")
@@ -200,3 +200,15 @@ for i in range(1, 1001):
     for j in range(len(area)):
         gpd_br.loc[j, 'building_d'] = sum(area[j])
     gpd_br.to_file("/home/maksimov/building_density_grids/grid"+str(i)+"/grid_WITH_VALUE"+str(i)+".shp")
+
+
+
+
+# # Landsat API
+# api = API(credentials.landsat_username, credentials.landsat_pswd)
+# scenes = api.search()
+# # Save the name of each scene
+# api.logout()
+# ee = EarthExplorer(credentials.landsat_username, credentials.landsat_pswd)
+# ee.download()
+# ee.logout()
