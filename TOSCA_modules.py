@@ -1,3 +1,5 @@
+import os
+
 import credentials
 import sen2chain
 import geopandas
@@ -115,6 +117,9 @@ def download_image_gdf(start_date: str,
     request = sen2chain.DataRequest(start_date, end_date).from_file(geodataframe)
     image_names = list(request['hubs'].keys())
 
+    # List of unique tile identifiers and unique dates
+    tile_identifiers = list(set([str(name[39:44]) for name in image_names]))
+    date_identifiers = sorted(list(set([str(name[11:19]) for name in image_names])))
     # Variable storing indexes
     results = {'NDVI': [], 'NDWI': [], 'NDMI': [], 'NBR': []}
     # Variable storing dates
@@ -136,33 +141,40 @@ def download_image_gdf(start_date: str,
         except:
             print("ERROR: Image " + name + " could not be processed to L2A")
 
-        # String manipulation to work in the right folder
-        name_2a = name[:8] + "2A" + name[10:]
-        temp_tile = name_2a.split("_")[-2][1:]
-        path_to_image = SEN2CHAIN_DATA_PATH + "data/L2A/" + temp_tile + "/" + name_2a + ".SAFE/"
-        print("Working on image:", path_to_image)
-
+    for date in date_identifiers:
+        list_of_rasters_red = []
+        list_of_rasters_pir = []
+        for tile in tile_identifiers:
+            base_name = "/home/maksimov/sen2chain_data/data/L2A/"+tile+"/"
+            all_files = os.listdir(base_name)
+            date_files = [i for i in all_files if str(all_files[11:19]) == date]
+            for file in date_files:
+                temp_name = base_name + file + "/GRANULE/"
+                temp_name += os.listdir(temp_name)[0]
+                temp_name += "/IMG_DATA/R10m/"
+                red_name = temp_name + os.listdir(temp_name)[3]
+                pir_name = temp_name + os.listdir(temp_name)[4]
+                list_of_rasters_red.append(Raster(red_name))
+                list_of_rasters_pir.append(Raster(pir_name))
         try:
             # Index extraction
             gdf_municipality = geopandas.GeoDataFrame.from_file(geodataframe)
             big_raster_red = Raster.merge(list_of_rasters_red)
             big_raster_pir = Raster.merge(list_of_rasters_pir)
-
-            red = np.array(big_raster.zonal_stats(gdf_municipality, stats=["mean"])["mean"])
-            pir = np.array(big_raster.zonal_stats(gdf_municipality, stats=["mean"])["mean"])
-
+            red = np.array(big_raster_red.zonal_stats(gdf_municipality, stats=["mean"])["mean"])
+            pir = np.array(big_raster_red.zonal_stats(gdf_municipality, stats=["mean"])["mean"])
             ndvi_val = (pir - red) / (pir + red)
-            # process_index(path_to_image, results)
 
-            # Date extraction
-            sensing_date = name.split("_")[2][:8]
-            dates.append(pd.to_datetime(sensing_date, format="%Y\%m\%d"))
+            #Do the other raster and all the other band and indexes
+            #One file for each index (because there are multiple polygons, so one file per index and the columns of the dataframe are the polygons)
+
+            dates.append(pd.to_datetime(date, format="%Y\%m\%d"))
 
         except:
-            print("ERROR: Image " + name + " could not be analysed")
+            print("ERROR: Image at date " + date + " could not be analysed")
 
-        # Image deletion
-        # implement if user specified so
+    # Image deletion
+    # implement if user specified so
 
     # Database update
     store = pd.HDFStore(file_output)

@@ -1,6 +1,7 @@
 import os
 import sys
 
+import geopandas.plotting
 import numpy as np
 import pandas as pd
 
@@ -189,18 +190,18 @@ def merge_lists(l1, l2):
 # gpd_br.to_file("/home/maksimov/very_small_grid_density_test.shp")
 
 
-from gistools.layer import PolygonLayer
-edificacao = PolygonLayer("/home/maksimov/Downloads/vecteurs/edificacao_full.shp")
-for i in range(255, 1001):
-    df_br = PolygonLayer("/home/maksimov/building_density_grids/grid"+str(i)+"/grid"+str(i)+".shp")
-    df_br = df_br.to_crs(32722)
-    gpd_br = geopandas.read_file("/home/maksimov/building_density_grids/grid"+str(i)+"/grid"+str(i)+".shp")
-
-    area = df_br.intersecting_area(edificacao, normalized=True)
-    for j in range(len(area)):
-        gpd_br.loc[j, 'building_d'] = sum(area[j])
-    gpd_br.to_file("/home/maksimov/building_density_grids/grid"+str(i)+"/grid_WITH_VALUE"+str(i)+".shp")
-
+# from gistools.layer import PolygonLayer
+# edificacao = PolygonLayer("/home/maksimov/Downloads/vecteurs/edificacao_full.shp")
+# for i in range(255, 1001):
+#     df_br = PolygonLayer("/home/maksimov/building_density_grids/grid"+str(i)+"/grid"+str(i)+".shp")
+#     df_br = df_br.to_crs(32722)
+#     gpd_br = geopandas.read_file("/home/maksimov/building_density_grids/grid"+str(i)+"/grid"+str(i)+".shp")
+#
+#     area = df_br.intersecting_area(edificacao, normalized=True)
+#     for j in range(len(area)):
+#         gpd_br.loc[j, 'building_d'] = sum(area[j])
+#     gpd_br.to_file("/home/maksimov/building_density_grids/grid"+str(i)+"/grid_WITH_VALUE"+str(i)+".shp")
+#
 
 
 
@@ -212,3 +213,10 @@ for i in range(255, 1001):
 # ee = EarthExplorer(credentials.landsat_username, credentials.landsat_pswd)
 # ee.download()
 # ee.logout()
+
+
+gpd_list = []
+for i in range(1, 1001):
+    gpd_list.append(geopandas.read_file("/home/maksimov/building_density_grids/grid" + str(i) + "/grid_WITH_VALUE" + str(i) + ".shp"))
+    all_grid = geopandas.pd.concat(gpd_list)
+    all_grid.to_file("/home/maksimov/BIG_GRID/ALL_GRID_DENSITY.shp")
