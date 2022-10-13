@@ -361,4 +361,25 @@ Soit API openWeatherData (pas complètement opne source)
 soit dl de ERA5 tous les 5/10 jours
 """
 
+"""
+*******************************Landsat API
+"""
+
+
+def landsat_img():
+    api = API(credentials.landsat_username, credentials.landsat_pswd)
+    scenes = api.search(
+        dataset='',
+        latitude=10,
+        longitude=10,
+        start_date='',
+        end_date=''
+    )
+    # Save the name of each scene
+    api.logout()
+    ee = EarthExplorer(credentials.landsat_username, credentials.landsat_pswd)
+    ee.download()
+    ee.logout()
+
+
 

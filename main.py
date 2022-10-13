@@ -205,14 +205,6 @@ def merge_lists(l1, l2):
 
 
 
-# # Landsat API
-# api = API(credentials.landsat_username, credentials.landsat_pswd)
-# scenes = api.search()
-# # Save the name of each scene
-# api.logout()
-# ee = EarthExplorer(credentials.landsat_username, credentials.landsat_pswd)
-# ee.download()
-# ee.logout()
 
 
 gpd_list = []
