@@ -3,13 +3,16 @@ import cdsapi
 import pandas as pd
 import numpy as np
 
+
 def get_climate_data(year: str,
                      month: [str],
-                     path: str) -> object:
+                     bounding_box: [int],
+                     path: str) -> int:
     """
     Downloads the climate data and saves it to specified file
     :param year: string, year of the data
     :param month: [string], list of the months of the data
+    :param bounding_box: [int], [xmin, ymax, xmax, ymin], list of the bounding box coordinates
     :param path: string, name of the output file
     :return: 0 if finished correctly
     """
@@ -34,22 +37,22 @@ def get_climate_data(year: str,
     return 0
 
 
-def process_climate_data(path: str) -> pd.DataFrame:
-    """
-    Processes the raw data file and converts it into a proper DataFrame
-    :param path: string, path to the raw data file
-    :return: pandas.DataFrame, reformatted climate data
-    """
-    dataset = nc.Dataset(path)
-    times = dataset.variables['time']
-    skin_temp = dataset.variables['skt']
-    #precipitation = dataset.variables['tp']
-    new_times = nc.num2date(times[:], times.units)
-    pd_skt = pd.Series(skin_temp[:, 0], index=new_times)
-    #pd_tp = pd.Series(precipitation[:, 0], index=new_times)
-    #pd_df = pd.DataFrame({'skin_temperature': pd_skt, 'total_precipitation': pd_tp})
-    #return pd_df
-    return pd.DataFrame({'skin_temperature': pd_skt})
+# def process_climate_data(path: str) -> pd.DataFrame:
+#     """
+#     Processes the raw data file and converts it into a proper DataFrame
+#     :param path: string, path to the raw data file
+#     :return: pandas.DataFrame, reformatted climate data
+#     """
+#     dataset = nc.Dataset(path)
+#     times = dataset.variables['time']
+#     skin_temp = dataset.variables['skt']
+#     #precipitation = dataset.variables['tp']
+#     new_times = nc.num2date(times[:], times.units)
+#     pd_skt = pd.Series(skin_temp[:, 0], index=new_times)
+#     #pd_tp = pd.Series(precipitation[:, 0], index=new_times)
+#     #pd_df = pd.DataFrame({'skin_temperature': pd_skt, 'total_precipitation': pd_tp})
+#     #return pd_df
+#     return pd.DataFrame({'skin_temperature': pd_skt})
 
 def nearest_era_centroid(dataset, parcel_lat, parcel_lon):
     """
@@ -71,5 +74,5 @@ def nearest_era_centroid(dataset, parcel_lat, parcel_lon):
     return closest_lat_index, closest_lon_index
 
 
-get_climate_data('2010', ['06', '07'], '/home/maksimov/ERA5_TOSCA_download.nc')
-#process_climate_data('/home/maksimov/ERA5_download.nc')
+#get_climate_data('2010', ['06', '07'], '/home/maksimov/ERA5_TOSCA_download.nc')
+#process_climate_data('/home/daniel/Downloads/ERA5_download.nc')
