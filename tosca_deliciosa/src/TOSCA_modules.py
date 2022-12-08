@@ -30,7 +30,7 @@ SEN2CHAIN_DATA_PATH = "/home/maksimov/sen2chain_data/"
 def download_image_tile(start_date: str,
                         end_date: str,
                         tile_list: [str],
-                        file_output: str) -> [str]:
+                        file_output: str) -> int:
     """
     Downloads the images of the given tiles between start_date and end_date.
     Returns a list containing  the identifiers of the downloaded images

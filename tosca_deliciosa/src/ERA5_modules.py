@@ -4,15 +4,15 @@ import pandas as pd
 import numpy as np
 
 
-def get_climate_data(year: str,
-                     month: [str],
-                     bounding_box: [int],
+def get_climate_data(year,
+                     month: list,
+                     bounding_box: list,
                      path: str) -> int:
     """
     Downloads the climate data and saves it to specified file
     :param year: string, year of the data
     :param month: [string], list of the months of the data
-    :param bounding_box: [int], [xmin, ymax, xmax, ymin], list of the bounding box coordinates
+    :param bounding_box: [int], [ymax, xmin, ymin, xmax], list of the bounding box coordinates
     :param path: string, name of the output file
     :return: 0 if finished correctly
     """
@@ -24,8 +24,8 @@ def get_climate_data(year: str,
             'variable': [
                 'skin_temperature', 'total_precipitation',
                 ],
-            'year': year,
-            'month': month,
+            'year': str(year),
+            'month': [str(i) for i in month],
             'time': '00:00',
             'area': [
                 -14, -49, -15,

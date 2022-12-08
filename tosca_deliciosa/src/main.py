@@ -212,3 +212,26 @@ for i in range(1, 1001):
     gpd_list.append(geopandas.read_file("/home/maksimov/building_density_grids/grid" + str(i) + "/grid_WITH_VALUE" + str(i) + ".shp"))
     all_grid = geopandas.pd.concat(gpd_list)
     all_grid.to_file("/home/maksimov/BIG_GRID/ALL_GRID_DENSITY.shp")
+
+####################################SHAPEFILE FOR DENGUE CASES POINTS
+dengue_cases = pandas.read_excel("/home/maksimov/Downloads/Data_Sao_Sebastiao_Brasilia_APUREZA_DELICIOSA/data_santВ/CasDengue_RenaudALRIC.xlsx")
+
+loc = Nominatim(user_agent="GetLoc", timeout=10)
+
+schema = {
+    'geometry':'Point',
+    'properties':[('Name','str')]
+}
+pointShp = fiona.open('/home/maksimov/dengue_points_data/dengue_points2.shp', mode='w', driver='ESRI Shapefile', schema = schema, crs = "EPSG:4326")
+#iterate over each row in the dataframe, find lat and lon and save record
+for index, row in dengue_cases.iterrows():
+    getloc = loc.geocode(row["adresse"])
+    if getloc is not None:
+        rowDict = {
+            'geometry' : {'type':'Point',
+                         'coordinates': (getloc.longitude,getloc.latitude)},
+            'properties': {'Name' : row["index"]},
+        }
+        pointShp.write(rowDict)
+#close fiona object
+pointShp.close()
